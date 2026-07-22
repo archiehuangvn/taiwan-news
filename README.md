@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tin Đài Loan 24h
 
-## Getting Started
+Website tổng hợp cho cộng đồng người Việt tại Đài Loan, gồm 2 chuyên mục:
 
-First, run the development server:
+- **Tin tức** (`/`) — tin thời sự, kinh tế, chính sách, đời sống Đài Loan, tóm tắt và dịch sang tiếng Việt.
+- **Ăn uống & Check-in** (`/dia-diem`) — địa điểm ăn uống, check-in hot nhất Đài Loan, tổng hợp từ Instagram, Threads và các trang du lịch chính thức của Đài Loan.
+
+## Chạy dự án
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Cấu trúc nội dung
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Hiện tại nội dung được lưu dưới dạng dữ liệu tĩnh, biên tập thủ công trong code (không dùng database), để dễ kiểm soát chất lượng và tránh vi phạm điều khoản dịch vụ của các nền tảng mạng xã hội:
 
-## Learn More
+- `src/lib/articles.ts` — danh sách bài tin tức.
+- `src/lib/places.ts` — danh sách địa điểm ăn uống/check-in.
 
-To learn more about Next.js, take a look at the following resources:
+Mỗi mục đều có trường `sourceUrl`/`sourceName` để luôn trích dẫn nguồn gốc.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Quy trình thêm địa điểm mới (bán tự động)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Instagram và Threads **không cho phép tự động thu thập (scrape)** nội dung công khai của tài khoản khác — vi phạm sẽ dẫn đến khóa tài khoản/IP và rủi ro bản quyền. Vì vậy quy trình cập nhật là bán tự động:
 
-## Deploy on Vercel
+1. Tìm bài viết/địa điểm phù hợp trên Instagram, Threads hoặc trang du lịch Đài Loan (thủ công, đúng ToS).
+2. Vào `/admin/dich`, dán nội dung gốc (caption, mô tả) để dịch sang tiếng Việt bằng Google Cloud Translation API.
+3. Biên tập lại bản dịch cho tự nhiên, thêm một entry mới vào `src/lib/places.ts` (title, mô tả tiếng Việt, category, city, sourcePlatform, sourceUrl, sourceName, ảnh).
+4. Trên trang chi tiết địa điểm, bài gốc từ Instagram/Threads sẽ được nhúng lại bằng oEmbed chính thức của Meta (component `SocialEmbed`), không copy nội dung ảnh/video.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Biến môi trường
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Sao chép `.env.example` thành `.env.local` và điền:
+
+```
+GOOGLE_TRANSLATE_API_KEY=
+```
+
+Lấy API key tại [Google Cloud Console](https://console.cloud.google.com/apis/credentials) sau khi bật **Cloud Translation API**.
+
+## Hướng phát triển tiếp theo
+
+- Chuyển `lib/articles.ts` và `lib/places.ts` sang một database thật (Postgres qua Vercel Postgres/Neon) khi cần nhiều người cùng biên tập hoặc số lượng bài lớn.
+- Thêm trang quản trị (CRUD + đăng nhập) để biên tập viên tự thêm bài mà không cần sửa code.
+- Tự động kéo bài từ các trang tin/blog Đài Loan có RSS công khai (không đụng tới Instagram/Threads) để giảm công sức nhập liệu.
+
+## Công nghệ
+
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4.
